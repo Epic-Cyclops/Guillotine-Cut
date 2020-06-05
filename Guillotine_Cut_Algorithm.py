@@ -1,49 +1,40 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri May 22 13:18:44 2020
+Created on Thu May 28 11:29:23 2020
 
 @author: jampi
 """
 
-import csv
-import numpy as np
-
-"""OLD #Function to cut eva
-def cut_eva(EVA_width, cut_list,cut_pieces = [],EVA_consumption_length = 0):
-    if len(cut_list) > 0:
-        #Track order to cut pieces in
-        cut_pieces.append(cut_list[-1])
-        
-        #Calculate EVA consumption by adding to consumed length
-        EVA_consumption_length+=cut_list[-1][0]
-        
-        #calculate remainder length after cut is made
-        if cut_list[-1][0] < EVA_width-cut_list[-1][1]:
-            remainder = (cut_list[-1][0], EVA_width-cut_list[-1][1])
-        else:
-            remainder = EVA_width-cut_list[-1][1], (cut_list[-1][0])
-        
-        #Cut from remainder using other function
-        #print(cut_list[-1])
-        (cut_list,cut_pieces) = remainder_cut(cut_list[0:-1], remainder, cut_pieces)
-        
-        #Recurse with remaining uncut pieces
-        return cut_eva(EVA_width,cut_list,cut_pieces,EVA_consumption_length)
-    
-    else:
-        return (cut_pieces, EVA_consumption_length)
+"""BUG FIX NOTES:
+    -needs functions change so intake array is not edited array
 """
 
+import csv
+
+
 #Function to cut eva
-def cut_eva(EVA_width, cut_list,cut_pieces = [],EVA_consumption_length = 0):
+def cut_eva(EVA_width, cut_list_in, cut_pieces_in = [],EVA_consumption_length = 0, k = -1, main_cuts_in = []):
+    #Recursion counter
+    k+=1
+    
+    #Duplicate cut_pieces array
+    cut_pieces = [i for i in cut_pieces_in]
+    
+    #duplicate cut_list array
+    cut_list = [i for i in cut_list_in]
+    
+    #duplicate main_cuts entry for tracking the "ripper" cuts
+    main_cuts = [i for i in main_cuts_in]
+    
     if len(cut_list) > 0:
-        
+              
         #Get total area cut so far:
         total_cut_area = sum(i[2] for i in cut_pieces)
         
         #print(str(len(cut_pieces)+len(cut_list)) + '  |  ' + str(len(cut_pieces)) + '  |  ' + str(len(cut_list)))
         #Track order to cut pieces in
         first_cut_piece = cut_list[-1]
+        first_cut_piece.append(k)
         cut_pieces.append(first_cut_piece)
         del(cut_list[-1])
         
@@ -59,7 +50,7 @@ def cut_eva(EVA_width, cut_list,cut_pieces = [],EVA_consumption_length = 0):
             remainder_1 = (EVA_width-first_cut_piece[1],first_cut_piece[0])
             #print('Remainder 1 is: ' + str(remainder_1))
             #Cut apart remainder:
-            (cut_list_1,cut_pieces_1) = remainder_cut(cut_list, remainder_1, cut_pieces)
+            (cut_list_1,cut_pieces_1) = remainder_cut(cut_list, remainder_1, cut_pieces,k)
             
             #Calculate efficiency of new cuts
             efficiency_1 = (sum(i[2] for i in cut_pieces_1)-total_cut_area)/(EVA_width*EVA_consumption_1/144)
@@ -74,7 +65,7 @@ def cut_eva(EVA_width, cut_list,cut_pieces = [],EVA_consumption_length = 0):
             #print('Remainder 2 is: ' + str(remainder_2))
             
             #Cut apart remainder:
-            (cut_list_2,cut_pieces_2) = remainder_cut(cut_list, remainder_2, cut_pieces)
+            (cut_list_2,cut_pieces_2) = remainder_cut(cut_list, remainder_2, cut_pieces,k)
             
             #Calculate efficiency of new cuts
             efficiency_2 = (sum(i[2] for i in cut_pieces_2)-total_cut_area)/(EVA_width*EVA_consumption_2/144)
@@ -87,55 +78,38 @@ def cut_eva(EVA_width, cut_list,cut_pieces = [],EVA_consumption_length = 0):
             #Calculate EVA consumption
             EVA_consumption_length+=EVA_consumption_1
             
+            #Append main cut length
+            main_cuts.append(first_cut_piece[0])
+            
             #Recurse with remaining uncut pieces using list 1
-            return cut_eva(EVA_width,cut_list_1,cut_pieces_1,EVA_consumption_length)
+            return cut_eva(EVA_width,cut_list_1,cut_pieces_1,EVA_consumption_length,k,main_cuts)
         
         else:
             #print('2!')
             #Calculate EVA consumption
             EVA_consumption_length+=EVA_consumption_2
+            
+            #Append main cut length
+            main_cuts.append(first_cut_piece[1])
 
             #Recurse with remaining uncut pieces using list 1
-            return cut_eva(EVA_width,cut_list_2,cut_pieces_2,EVA_consumption_length)
+            return cut_eva(EVA_width,cut_list_2,cut_pieces_2,EVA_consumption_length,k,main_cuts)
     
     else:
-        return (cut_pieces, EVA_consumption_length)
-
-"""OLD REMAINDER CUT FUNCTION
-def cut_remainder(remainder, cut_list, cut_pieces):
-    
-    #Create empty set list for potentials
-    potentials = []
-    
-    #iterate through uncut pieces and find which ones fit into the remainder
-    for x in range(len(cut_list)):
-        if cut_list[x][1] <= remainder[1] and cut_list[x][0] <= remainder[0]:
-            potentials.append([cut_list[x][0], cut_list[x][1], cut_list[x][2], x])
-    
-    if len(potentials) >0:
-        #decide which piece to cut by pulling the maximum area piece that fits
-        cut = max(potentials, key = lambda x: x[2])
-        
-        #add the piece to the cut list and delete it from the uncut list
-        cut_pieces.append(cut[0:-1])
-        del cut_list[cut[-1]]            
- 
-        #calculate new remainder and recurse--not done yet
-       
-    return cut_list, cut_pieces
-"""
+        return (cut_pieces, EVA_consumption_length,main_cuts)
 
 
 ''' This function takes in a piece size and a list of pieces to be cut from it to return an efficient layout of cut pieces'''
 #The cut_list is assumed to be ordered smallest to largest piece by width
 #The cut_list should be an array of 3 dimension arrays with width, length, area
 #The remainder is two-dimensional tuple
-def remainder_cut(cut_list1,remainder, cut_pieces1 = []):
+def remainder_cut(cut_list_in,remainder, cut_pieces_in = [], identifier = -1):
     #Create an empty array to track the pieces that can be cut from remainder
     potentials = []
     
-    cut_list = [i for i in cut_list1]
-    cut_pieces = [i for i in cut_pieces1]
+    #Create new arrays for inputs to avoid changing data outside function
+    cut_list = [i for i in cut_list_in]
+    cut_pieces = [i for i in cut_pieces_in]
     
     #Find which pieces fit into remainder
     for x in range(len(cut_list)):
@@ -149,9 +123,11 @@ def remainder_cut(cut_list1,remainder, cut_pieces1 = []):
     
     #If there are potential cuts:
     else:
-        #Cut the largest piece from the remainder
+        #Cut the largest piece from the remainder and append identifier
         cut = max(potentials, key = lambda x: x[2])
-        cut_pieces.append(cut[0:3])
+        new_piece = cut[0:3]
+        new_piece.append(identifier)
+        cut_pieces.append(new_piece)
         #print('CUT!' +str(cut[0:3]))
         cut_index = cut[3]
 
@@ -171,7 +147,7 @@ def remainder_cut(cut_list1,remainder, cut_pieces1 = []):
             #print('Orientation 1 remainder: ' + str(best_remainder_1))
             
             #get list of cuts from remainder
-            new_cut_list_1, new_cut_pieces_1 = remainder_cut(cut_list,best_remainder_1,cut_pieces)
+            new_cut_list_1, new_cut_pieces_1 = remainder_cut(cut_list,best_remainder_1,cut_pieces, identifier)
             
             #get area of cut cut pieces
             area1 = sum([i[2] for i in new_cut_pieces_1])
@@ -185,7 +161,7 @@ def remainder_cut(cut_list1,remainder, cut_pieces1 = []):
             best_remainder_2 = best_cut_order((cut[1],cut[0]),(remainder[0],remainder[1]))
             #print('Orientation 2 remainder: ' + str(best_remainder_2))
             #get list of cuts from remainder
-            new_cut_list_2, new_cut_pieces_2 = remainder_cut(cut_list,best_remainder_2,cut_pieces)
+            new_cut_list_2, new_cut_pieces_2 = remainder_cut(cut_list,best_remainder_2,cut_pieces, identifier)
             
             #get area of cut cut pieces
             area2 = sum([i[2] for i in new_cut_pieces_2])
@@ -236,7 +212,10 @@ def get_data(filename = 'Glass Block Sizes.csv'):
 
 
 """This function deletes the quantity data fom the raw csv data"""
-def clear_quantity(glass_data):
+def clear_quantity(glass_data_in):
+    #Create duplicate array to be edited
+    glass_data = [i for i in glass_data_in]
+    
     #Make a list with one block size on each line aand remove qty column      
     glass_block_sizes = []
     k = 0
@@ -272,7 +251,13 @@ def order_and_sort(glass_block_sizes):
 
 """This function eliminates points that are too large to be cut from the material
 and returns two arrays with the eliminated points and points to cut"""
-def point_eliminate(glass_block_sizes_sorted, EVA_width):
+def point_eliminate(glass_block_sizes_sorted_in, EVA_width):
+    
+    #Duplicate sorted array for editing
+    glass_block_sizes_sorted = [i for i in glass_block_sizes_sorted_in]
+    
+    initial_length = len(glass_block_sizes_sorted)
+    
     #Eliminate points with dimensions greater than EVA width
     points_to_delete = []
     oversized_piece_sizes = []
@@ -285,17 +270,20 @@ def point_eliminate(glass_block_sizes_sorted, EVA_width):
         del glass_block_sizes_sorted[x]
     
     #Double Check sizes of arrays to make sure the oversized pieces and glass_block_sizes arrays are same total length as before points are deleted
-    if len(glass_block_sizes) != len(glass_block_sizes_sorted)+len(oversized_piece_sizes):
+    if initial_length != len(glass_block_sizes_sorted)+len(oversized_piece_sizes):
         print('ERROR! Number of to-cut pieces and oversized pieces does not match total number of pieces!')
     
     return (glass_block_sizes_sorted,oversized_piece_sizes)
 
 """This function appends area to the size arrays
 Assumes dims are in. and gives area in sq. ft."""
-def append_area(glass_block_sizes_sorted):
+def append_area(glass_block_sizes_sorted_in):
+    #Duplicate glass_block_sizes_sorted
+    glass_block_sizes_sorted = [i for i in glass_block_sizes_sorted_in]
+    
     #Add area to points
     for x in glass_block_sizes_sorted:
-        x.append(x[0]*x[1]/144)
+        x.append(round(x[0]*x[1]/144,2))
         
     return glass_block_sizes_sorted
 
@@ -305,7 +293,7 @@ def layer_multiplier(glass_block_sizes_sorted, layer_count = 2):
     EVA_cut_list = []
     for x in glass_block_sizes_sorted:
         for y in range(layer_count):
-            EVA_cut_list.append(x)
+            EVA_cut_list.append([i for i in x])
             
     return EVA_cut_list
 
@@ -314,81 +302,3 @@ cuts to be made, assuming areas are stored in the last array element """
 def material_minimum(EVA_cut_list):
     return sum(i[-1] for i in EVA_cut_list)
 
-if __name__ == '__main__':
-    #Knowns: EVA width
-    EVA_width=49
-    layer_count = 2
-    
-    '''Bring in CSV Data'''
-    
-    glass_data = get_data('Glass Block Sizes.csv')
-    
-    glass_block_sizes = clear_quantity(glass_data)
-    
-    glass_block_sizes_sorted = order_and_sort(glass_block_sizes)
-    
-    glass_block_sizes_sorted, oversized_piece_sizes = point_eliminate(glass_block_sizes_sorted,EVA_width)
-        
-    #Print out eliminated points into other large cut csv
-    
-    glass_block_sizes_sorted = append_area(glass_block_sizes_sorted)
-    
-    #Make new list and duplicate entries for 2 required layerss of EVA
-    EVA_cut_list = layer_multiplier(glass_block_sizes_sorted, layer_count)
-    
-    #Calculate total area of remaining points
-    required_EVA_area = material_minimum(EVA_cut_list)
-          
-    #Recurse cutting using below function
-    (cut_pieces, EVA_consumption_length) = cut_eva(EVA_width,EVA_cut_list)
-    
-    #Calculate theoretical yield
-    Yield = required_EVA_area/(EVA_consumption_length*EVA_width/144)    
-    
-    print(Yield)
-    print(len(cut_pieces))
-    print(EVA_consumption_length/39.4)
-    print(len(oversized_piece_sizes*2))
-#    
-    
-  
-#    #Knowns: EVA width
-#    EVA_width=7
-#    layer_count = 2
-#    
-#    '''Bring in CSV Data'''
-#    
-#    glass_data = get_data('Test.csv')
-#    
-#    glass_block_sizes = clear_quantity(glass_data)
-#    
-#    glass_block_sizes_sorted = order_and_sort(glass_block_sizes)
-#    
-#    glass_block_sizes_sorted, oversized_piece_sizes = point_eliminate(glass_block_sizes_sorted,EVA_width)
-#        
-#    #Print out eliminated points into other large cut csv
-#    
-#    glass_block_sizes_sorted = append_area(glass_block_sizes_sorted)
-#    
-#    #Make new list and duplicate entries for 2 required layerss of EVA
-#    EVA_cut_list = layer_multiplier(glass_block_sizes_sorted, layer_count)
-#    
-#    #Calculate total area of remaining points
-#    required_EVA_area = material_minimum(EVA_cut_list)
-#          
-#    #Recurse cutting using below function
-#    (cut_pieces, EVA_consumption_length) = cut_eva(EVA_width,EVA_cut_list)
-#    
-#    #Calculate theoretical yield
-#    Yield = required_EVA_area/(EVA_consumption_length*EVA_width/144)    
-#    
-#    print(Yield)
-#    print(len(cut_pieces))
-#    print(EVA_consumption_length/39.4)
-#    print(len(oversized_piece_sizes*2))
-    
-    first_list = [[2,3,2*3/144] for i in range(6)]
-    test_list = [[2,3,2*3/144] for i in range(6)]
-    run1 = remainder_cut(test_list,(3.0,4.0))
-    run2 = remainder_cut(test_list,(3.0,4.0))
-    print(first_list == test_list)
