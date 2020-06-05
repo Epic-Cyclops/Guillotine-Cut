@@ -114,7 +114,7 @@ def remainder_cut(cut_list_in,remainder, cut_pieces_in = [], identifier = -1):
     #Find which pieces fit into remainder
     for x in range(len(cut_list)):
         if (cut_list[x][1] <= remainder[1] and cut_list[x][0] <= remainder[0]) or (cut_list[x][0] <= remainder[1] and cut_list[x][1] <= remainder[0]):
-            potentials.append([cut_list[x][0], cut_list[x][1], cut_list[x][2],x])
+            potentials.append([cut_list[x][0], cut_list[x][1], cut_list[x][2], cut_list[x][3], x])
             #print('!')
     
     #If no pieces can be cut from the remainder, return the input data except remainder
@@ -125,11 +125,11 @@ def remainder_cut(cut_list_in,remainder, cut_pieces_in = [], identifier = -1):
     else:
         #Cut the largest piece from the remainder and append identifier
         cut = max(potentials, key = lambda x: x[2])
-        new_piece = cut[0:3]
+        new_piece = cut[0:4]
         new_piece.append(identifier)
         cut_pieces.append(new_piece)
         #print('CUT!' +str(cut[0:3]))
-        cut_index = cut[3]
+        cut_index = cut[-1]
 
         del(cut_list[cut_index])
 
@@ -203,6 +203,7 @@ def get_data(filename = 'Glass Block Sizes.csv'):
                         x[y]=int(x[y])
                     else:
                         x[y]=float(x[y])
+
                 except:
                     pass
             if type(x[1]) == float:
@@ -241,7 +242,7 @@ def order_and_sort(glass_block_sizes):
         if x[0] < x[1]:
             glass_block_sizes_ordered.append(x)
         else:
-            glass_block_sizes_ordered.append([x[1],x[0]])
+            glass_block_sizes_ordered.append([x[1],x[0],x[2]])
     
     
     #Order points by width
@@ -283,7 +284,7 @@ def append_area(glass_block_sizes_sorted_in):
     
     #Add area to points
     for x in glass_block_sizes_sorted:
-        x.append(round(x[0]*x[1]/144,2))
+        x.insert(2, round(x[0]*x[1]/144,2))
         
     return glass_block_sizes_sorted
 
@@ -300,5 +301,5 @@ def layer_multiplier(glass_block_sizes_sorted, layer_count = 2):
 """This function calculates the theoretical minimum material requirement for the
 cuts to be made, assuming areas are stored in the last array element """
 def material_minimum(EVA_cut_list):
-    return sum(i[-1] for i in EVA_cut_list)
+    return sum(i[2] for i in EVA_cut_list)
 
