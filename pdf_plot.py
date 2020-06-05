@@ -8,7 +8,7 @@ Created on Thu Jun  4 11:28:17 2020
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
-def array_page_split(array):
+def array_page_split(array, marks = True):
     split_arrays = []
     
     #Number of sections calulcator
@@ -21,7 +21,10 @@ def array_page_split(array):
     
     #Sort data into its proper slot
     for i in array:
-        split_arrays[i[-1]].append(i[0:2])
+        if marks == True:
+            split_arrays[i[-1]].append([i[0],i[1],i[3]])
+        else:
+            split_arrays[i[-1]].append(i[0:2])
     
     return split_arrays
 
@@ -61,16 +64,19 @@ def pdf_save(figure_array, filename = 'Test.pdf'):
             pdf.savefig(i)
     return
 
-def label_generator(box_sizes):
+def label_generator(box_sizes, marks = True):
     labels = []
     for i in box_sizes:
         labels.append([])
         for j in i:
-            label_string = str(j[0]) + ' in. x ' + str(j[1]) + ' in.'
+            if marks == False:
+                label_string = str(j[0]) + ' in. x ' + str(j[1]) + ' in.'
+            else:
+                label_string = j[2] + '\n' + str(j[0]) + ' in. x ' + str(j[1]) + ' in.'
             labels[-1].append(label_string)
     return labels
 
-def plot_and_save(split_array, main_cuts):
+def plot_and_save(split_array, main_cuts, marks = True):
     #Generate arrays for stoing data
     plot_arrays_x = []
     plot_arrays_y = []
@@ -84,7 +90,7 @@ def plot_and_save(split_array, main_cuts):
         label_points.append(label)
     
     #Generate plot labels
-    plot_labels = label_generator(split_array)
+    plot_labels = label_generator(split_array, marks)
     
     #Create array for storing figures
     figures = []
