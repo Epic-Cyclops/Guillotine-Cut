@@ -303,3 +303,24 @@ cuts to be made, assuming areas are stored in the last array element """
 def material_minimum(EVA_cut_list):
     return sum(i[2] for i in EVA_cut_list)
 
+"""This function just calls all the above functions in order to output the cut list data. It is
+basically a holder ju"""
+def eva_cut_from_csv(filename, EVA_width, layer_count, marks = True):
+    
+    glass_data = get_data(filename)
+
+    glass_data = clear_quantity(glass_data)
+
+    glass_data = order_and_sort(glass_data)
+
+    glass_sizes, oversized_pieces = point_eliminate(glass_data, EVA_width)
+
+    glass_sizes = append_area(glass_sizes)
+
+    to_cut_list = layer_multiplier(glass_sizes)
+
+    cut_pieces, EVA_consumption_length, main_cuts = cut_eva(EVA_width, to_cut_list)
+    
+    EVA_cut_yield = material_minimum(to_cut_list)/(EVA_consumption_length*EVA_width/144)
+    
+    return cut_pieces, EVA_consumption_length, main_cuts, EVA_cut_yield, oversized_pieces
