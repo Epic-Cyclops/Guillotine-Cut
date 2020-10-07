@@ -44,9 +44,9 @@ def plot_array_generator(box_sizes):
     
     return (plot_points_x, plot_points_y, label_locations)
         
-def plot_boxes(x_points,y_points,label_locations, labels, title = 'Placeholder'):
+def plot_boxes(x_points,y_points,label_locations, labels, title = 'Placeholder', fontsize = 10):
     fig = plt.figure(figsize=(11,8.5))
-    plt.title(title)
+    plt.title(title, fontsize=fontsize)
     plt.axis('off')
     plt.axis('equal')
     for i in range(len(x_points)):
@@ -54,7 +54,7 @@ def plot_boxes(x_points,y_points,label_locations, labels, title = 'Placeholder')
         text_x = label_locations[i][0]
         text_y = label_locations[i][1]
         label = labels[i]
-        plt.text(text_x,text_y,label,horizontalalignment = 'center',verticalalignment = 'center',rotation = 90)
+        plt.text(text_x,text_y,label,horizontalalignment = 'center',verticalalignment = 'center',rotation = 90, fontsize=fontsize)
     
     return fig
 
@@ -76,7 +76,7 @@ def label_generator(box_sizes, marks = True):
             labels[-1].append(label_string)
     return labels
 
-def plot_and_save(split_array, main_cuts, marks = True):
+def plot_and_save(split_array, main_cuts, marks = True, filename = 'Test.pdf', fontsize=10):
     #Generate arrays for stoing data
     plot_arrays_x = []
     plot_arrays_y = []
@@ -98,8 +98,8 @@ def plot_and_save(split_array, main_cuts, marks = True):
     #Create and append all of the figures to the 
     for i in range(len(label_points)):
         figure_title = 'Ripper #' + str(i+1) + ': ' + str(main_cuts[i]) + ' in.'
-        figures.append(plot_boxes(plot_arrays_x[i], plot_arrays_y[i], label_points[i], plot_labels[i], figure_title))
+        figures.append(plot_boxes(plot_arrays_x[i], plot_arrays_y[i], label_points[i], plot_labels[i], figure_title, fontsize))
     
     #save it all out as a pdf
-    pdf_save(figures, 'Test.pdf')
+    pdf_save(figures, filename)
         

@@ -96,7 +96,7 @@ def cut_eva(EVA_width, cut_list_in, cut_pieces_in = [],EVA_consumption_length = 
             return cut_eva(EVA_width,cut_list_2,cut_pieces_2,EVA_consumption_length,k,main_cuts)
     
     else:
-        return (cut_pieces, EVA_consumption_length,main_cuts)
+        return (cut_pieces, EVA_consumption_length, main_cuts)
 
 
 ''' This function takes in a piece size and a list of pieces to be cut from it to return an efficient layout of cut pieces'''
@@ -303,24 +303,31 @@ cuts to be made, assuming areas are stored in the last array element """
 def material_minimum(EVA_cut_list):
     return sum(i[2] for i in EVA_cut_list)
 
-"""This function just calls all the above functions in order to output the cut list data. It is
-basically a holder ju"""
+"""This function just calls all the above functions in order to output the cut list data"""
 def eva_cut_from_csv(filename, EVA_width, layer_count, marks = True):
     
+    #get data from csv file
     glass_data = get_data(filename)
-
+    
+    #Change dataset so every row represents only 1 panel
     glass_data = clear_quantity(glass_data)
-
+    
+    #order the list
     glass_data = order_and_sort(glass_data)
-
+    
+    #get rid of pieces too big to be cut from material
     glass_sizes, oversized_pieces = point_eliminate(glass_data, EVA_width)
-
+    
+    #append an area measurement to dimensions
     glass_sizes = append_area(glass_sizes)
-
+    
+    #multiply each entry by the number of layers
     to_cut_list = layer_multiplier(glass_sizes)
-
+    
+    #Run the cutting algorithm
     cut_pieces, EVA_consumption_length, main_cuts = cut_eva(EVA_width, to_cut_list)
     
+    #Calculate the yield
     EVA_cut_yield = material_minimum(to_cut_list)/(EVA_consumption_length*EVA_width/144)
     
     return cut_pieces, EVA_consumption_length, main_cuts, EVA_cut_yield, oversized_pieces
