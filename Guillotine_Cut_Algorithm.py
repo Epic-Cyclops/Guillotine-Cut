@@ -33,9 +33,11 @@ def cut_eva(EVA_width, cut_list_in, cut_pieces_in = [],EVA_consumption_length = 
         
         #print(str(len(cut_pieces)+len(cut_list)) + '  |  ' + str(len(cut_pieces)) + '  |  ' + str(len(cut_list)))
         #Track order to cut pieces in
-        first_cut_piece = cut_list[-1]
-        first_cut_piece.append(k)
-        cut_pieces.append(first_cut_piece)
+        first_cut_piece_1 = [i for i in cut_list[-1]]
+        first_cut_piece_1.append(k)
+        first_cut_piece_2 = [i for i in cut_list[-1]]
+        first_cut_piece_2.append(k)
+        #cut_pieces.append(first_cut_piece)
         del(cut_list[-1])
         
         #Set effficiencies to negative in case one isn't used
@@ -43,29 +45,41 @@ def cut_eva(EVA_width, cut_list_in, cut_pieces_in = [],EVA_consumption_length = 
         efficiency_2 = -1
         
         #Try first orientation:
-        if first_cut_piece[1] <= EVA_width:
-            EVA_consumption_1 = first_cut_piece[0]
+        if first_cut_piece_1[1] <= EVA_width:
+            EVA_consumption_1 = first_cut_piece_1[0]
+            
+            
+            #Create hypothetical cut_pieces variable and append orientation
+            cut_pieces_1 = [i for i in cut_pieces]
+            first_cut_piece_1.append(1)
+            cut_pieces_1.append(first_cut_piece_1)
             
             #Calculate remainder:
-            remainder_1 = (EVA_width-first_cut_piece[1],first_cut_piece[0])
+            remainder_1 = (EVA_width-first_cut_piece_1[1],first_cut_piece_1[0])
             #print('Remainder 1 is: ' + str(remainder_1))
+            
             #Cut apart remainder:
-            (cut_list_1,cut_pieces_1) = remainder_cut(cut_list, remainder_1, cut_pieces,k)
+            (cut_list_1,cut_pieces_1) = remainder_cut(cut_list, remainder_1, cut_pieces_1,k)
             
             #Calculate efficiency of new cuts
             efficiency_1 = (sum(i[2] for i in cut_pieces_1)-total_cut_area)/(EVA_width*EVA_consumption_1/144)
             #print('eff 1: ' + str(round(efficiency_1,2)))
             
         #Try first orientation:
-        if first_cut_piece[0] <= EVA_width:
-            EVA_consumption_2 = first_cut_piece[1]
+        if first_cut_piece_2[0] <= EVA_width:
+            EVA_consumption_2 = first_cut_piece_2[1]
+            
+            #Create hypothetical cut_pieces variable and append orientation
+            cut_pieces_2 = [i for i in cut_pieces]
+            first_cut_piece_2.append(0)
+            cut_pieces_2.append(first_cut_piece_2)
             
             #Calculate remainder:
-            remainder_2 = (EVA_width-first_cut_piece[0],first_cut_piece[1])
+            remainder_2 = (EVA_width-first_cut_piece_2[0],first_cut_piece_2[1])
             #print('Remainder 2 is: ' + str(remainder_2))
             
             #Cut apart remainder:
-            (cut_list_2,cut_pieces_2) = remainder_cut(cut_list, remainder_2, cut_pieces,k)
+            (cut_list_2,cut_pieces_2) = remainder_cut(cut_list, remainder_2, cut_pieces_2,k)
             
             #Calculate efficiency of new cuts
             efficiency_2 = (sum(i[2] for i in cut_pieces_2)-total_cut_area)/(EVA_width*EVA_consumption_2/144)
@@ -79,7 +93,7 @@ def cut_eva(EVA_width, cut_list_in, cut_pieces_in = [],EVA_consumption_length = 
             EVA_consumption_length+=EVA_consumption_1
             
             #Append main cut length
-            main_cuts.append(first_cut_piece[0])
+            main_cuts.append(first_cut_piece_1[0])
             
             #Recurse with remaining uncut pieces using list 1
             return cut_eva(EVA_width,cut_list_1,cut_pieces_1,EVA_consumption_length,k,main_cuts)
@@ -90,7 +104,7 @@ def cut_eva(EVA_width, cut_list_in, cut_pieces_in = [],EVA_consumption_length = 
             EVA_consumption_length+=EVA_consumption_2
             
             #Append main cut length
-            main_cuts.append(first_cut_piece[1])
+            main_cuts.append(first_cut_piece_2[1])
 
             #Recurse with remaining uncut pieces using list 1
             return cut_eva(EVA_width,cut_list_2,cut_pieces_2,EVA_consumption_length,k,main_cuts)
@@ -109,7 +123,8 @@ def remainder_cut(cut_list_in,remainder, cut_pieces_in = [], identifier = -1):
     
     #Create new arrays for inputs to avoid changing data outside function
     cut_list = [i for i in cut_list_in]
-    cut_pieces = [i for i in cut_pieces_in]
+    cut_pieces_1 = [i for i in cut_pieces_in]
+    cut_pieces_2 = [i for i in cut_pieces_in]
     
     #Find which pieces fit into remainder
     for x in range(len(cut_list)):
@@ -119,19 +134,22 @@ def remainder_cut(cut_list_in,remainder, cut_pieces_in = [], identifier = -1):
     
     #If no pieces can be cut from the remainder, return the input data except remainder
     if potentials == []:
-        return (cut_list, cut_pieces)
+        return (cut_list, cut_pieces_in)
     
     #If there are potential cuts:
     else:
         #Cut the largest piece from the remainder and append identifier
         cut = max(potentials, key = lambda x: x[2])
-        new_piece = cut[0:4]
-        new_piece.append(identifier)
-        cut_pieces.append(new_piece)
+        new_piece_1 = cut[0:4]
+        new_piece_1.append(identifier)
+        new_piece_2 = cut[0:4]
+        new_piece_2.append(identifier)
+
         #print('CUT!' +str(cut[0:3]))
         cut_index = cut[-1]
 
         del(cut_list[cut_index])
+        #del(cut[-1])
 
         
         #Set value of areas to -1 in case one option isn't ran
@@ -146,8 +164,12 @@ def remainder_cut(cut_list_in,remainder, cut_pieces_in = [], identifier = -1):
             best_remainder_1 = best_cut_order((cut[0],cut[1]),(remainder[0],remainder[1]))
             #print('Orientation 1 remainder: ' + str(best_remainder_1))
             
+            #append orientation and pass through
+            new_piece_1.append(0)
+            cut_pieces_1.append(new_piece_1)
+            
             #get list of cuts from remainder
-            new_cut_list_1, new_cut_pieces_1 = remainder_cut(cut_list,best_remainder_1,cut_pieces, identifier)
+            new_cut_list_1, new_cut_pieces_1 = remainder_cut(cut_list,best_remainder_1,cut_pieces_1, identifier)
             
             #get area of cut cut pieces
             area1 = sum([i[2] for i in new_cut_pieces_1])
@@ -160,8 +182,13 @@ def remainder_cut(cut_list_in,remainder, cut_pieces_in = [], identifier = -1):
             #If orientation possible, determine which cut order results in larger remainder
             best_remainder_2 = best_cut_order((cut[1],cut[0]),(remainder[0],remainder[1]))
             #print('Orientation 2 remainder: ' + str(best_remainder_2))
+            
+            #append orientation and pass through
+            new_piece_2.append(1)
+            cut_pieces_2.append(new_piece_2)
+            
             #get list of cuts from remainder
-            new_cut_list_2, new_cut_pieces_2 = remainder_cut(cut_list,best_remainder_2,cut_pieces, identifier)
+            new_cut_list_2, new_cut_pieces_2 = remainder_cut(cut_list,best_remainder_2,cut_pieces_2, identifier)
             
             #get area of cut cut pieces
             area2 = sum([i[2] for i in new_cut_pieces_2])
@@ -177,6 +204,7 @@ def remainder_cut(cut_list_in,remainder, cut_pieces_in = [], identifier = -1):
 
        
 '''This cut determines the best order to guillotine cut a piece from a remainder to result in the largest remaining piece'''
+'''This function will need to be updated to keep track of the location'''
 #This function assumes the inputs are ordered        
 def best_cut_order(cut,remainder):
      #Calculate two potential remainder areas
@@ -185,7 +213,7 @@ def best_cut_order(cut,remainder):
      
      #return dimensions of largest remainder piece
      if cut_area_1>cut_area_2:
-         return (remainder[1]-cut[1],remainder[0])
+         return (remainder[0],remainder[1]-cut[1])
      else:
          return (remainder[0]-cut[0],remainder[1])
 
@@ -322,7 +350,7 @@ def eva_cut_from_csv(filename, EVA_width, layer_count, marks = True):
     glass_sizes = append_area(glass_sizes)
     
     #multiply each entry by the number of layers
-    to_cut_list = layer_multiplier(glass_sizes)
+    to_cut_list = layer_multiplier(glass_sizes, layer_count)
     
     #Run the cutting algorithm
     cut_pieces, EVA_consumption_length, main_cuts = cut_eva(EVA_width, to_cut_list)
@@ -331,3 +359,71 @@ def eva_cut_from_csv(filename, EVA_width, layer_count, marks = True):
     EVA_cut_yield = material_minimum(to_cut_list)/(EVA_consumption_length*EVA_width/144)
     
     return cut_pieces, EVA_consumption_length, main_cuts, EVA_cut_yield, oversized_pieces
+
+
+
+
+
+if __name__ == '__main__':
+    #import pdf_plot as pdf 
+
+
+    #Set file location and name
+    # filename = 'O:\Art_library\Flexi8network\Dallas Glass\Salem Police Handrail\EVA Cutting\EVA Sizes Phase 2.csv'
+
+    # pdf_filename = 'O:\Art_library\Flexi8network\Dallas Glass\Salem Police Handrail\EVA Cutting\EVA Cuts Phase 2.pdf'
+
+    #filename = r'O:\Art_library\Flexi8network\Ilani Casino Bar Glass\EVA Cut List 2.csv'
+    filename = r'C:\Users\jampi\Desktop\EVA Cutting\TriMet 9-9-21.csv'
+
+
+    #pdf_filename = r'O:\Art_library\Flexi8network\Ilani Casino Bar Glass\EVA Cut List-Diffused 2.pdf'
+    pdf_filename = r'C:\Users\jampi\Desktop\EVA Cutting\TM Test.pdf'
+
+    #Known variables
+    EVA_width = 86.6  #50, 78.7, 86.6, 91
+    marks = True
+    layer_count = 2
+    
+    "Test Functions Individually"
+    #get data from csv file
+    glass_data = get_data(filename)
+    
+    #Change dataset so every row represents only 1 panel
+    glass_data = clear_quantity(glass_data)
+    
+    #order the list
+    glass_data = order_and_sort(glass_data)
+    
+    #get rid of pieces too big to be cut from material
+    glass_sizes, oversized_pieces = point_eliminate(glass_data, EVA_width)
+    
+    #append an area measurement to dimensions
+    glass_sizes = append_area(glass_sizes)
+    
+    #multiply each entry by the number of layers
+    to_cut_list = layer_multiplier(glass_sizes, layer_count)
+    
+    #Run the cutting algorithm
+    cut_pieces, EVA_consumption_length, main_cuts = cut_eva(EVA_width, to_cut_list)
+    
+    #Calculate the yield
+    EVA_cut_yield = material_minimum(to_cut_list)/(EVA_consumption_length*EVA_width/144)
+    
+
+    "Hide Functions Behind Function"
+    #cut_pieces, EVA_consumption_length, main_cuts, EVA_cut_yield, oversized_pieces = eva_cut_from_csv(filename, EVA_width, layer_count, marks)
+
+    #split_cut_pieces = pdf.array_page_split(cut_pieces, marks)
+
+    #pdf.plot_and_save(split_cut_pieces, main_cuts, marks, pdf_filename, fontsize=20)
+
+    #Calculate Yield
+    #EVA_cut_yield = gc.material_minimum(to_cut_list)/(EVA_consumption_length*EVA_width/144)
+    print('The yield is ' + str(round(EVA_cut_yield*100,2)) + '%.')
+
+    EVA_consumption_ft = EVA_consumption_length/12
+    EVA_consumption_m = EVA_consumption_length/39.4
+    
+    
+    """------------------Individual Funcyion Testing-----------------------------"""
